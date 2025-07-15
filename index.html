@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="ressource/logo.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader - Téléchargements Simultanés</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header img {
+            opacity: 0.9;
+            height: 100px;
+            width: 120px;
+        }
+
+        .form-section {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .downloads-section {
+            padding: 0 30px 30px;
+        }
+
+        .downloads-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f3f4;
+        }
+
+        .downloads-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .clear-btn {
+            padding: 8px 16px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .download-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .download-item.completed {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .download-item.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .download-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .download-info h3 {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .download-meta {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .download-status {
+            text-align: right;
+            min-width: 120px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-queued {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-downloading {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .status-completed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-error {
+            background: #f5c6cb;
+            color: #721c24;
+        }
+
+        .progress-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 8px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .download-file-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .downloads-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .download-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .download-status {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="ressource/logo.png">
+            <h1>YouTube Downloader</h1>
+        </div>
+
+        <div class="form-section">
+            <form id="downloadForm">
+                <div class="form-group">
+                    <label for="url">URL YouTube</label>
+                    <input type="text" id="url" name="url" placeholder="Collez l'URL YouTube ici..." required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="format">Format</label>
+                        <select id="format" name="format">
+                            <option value="mp4">MP4 (Vidéo)</option>
+                            <option value="mp3">MP3 (Audio)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group"  id="quality">
+                        <label for="quality">Qualité</label>
+                        <select name="quality">
+                            <option value="highest">Meilleure qualité</option>
+                            <option value="136">720p</option>
+                            <option value="135">480p</option>
+                            <option value="134">360p</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="download-btn" id="downloadBtn">
+                    ⬇ Ajouter au téléchargement
+                </button>
+            </form>
+        </div>
+
+        <div class="downloads-section">
+            <div class="downloads-header">
+                <h2>Téléchargements</h2>
+                <button class="clear-btn" id="clearCompleted">Effacer terminés</button>
+            </div>
+            
+            <div id="downloadsList">
+                <div class="empty-state">
+                    <div style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;">💤</div>
+                    <p>Aucun téléchargement en cours</p>
+                    <p style="font-size: 0.9em; margin-top: 5px; opacity: 0.7;">Ajoutez une URL YouTube pour commencer</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const downloads = new Map();
+
+        // Éléments DOM
+        const downloadForm = document.getElementById('downloadForm');
+        const downloadsList = document.getElementById('downloadsList');
+        const clearCompletedBtn = document.getElementById('clearCompleted');
+        const formatSelect = document.getElementById('format');
+        const qualitySelect = document.getElementById('quality');
+
+        // Gestion de la visibilité des options de qualité
+        formatSelect.addEventListener('change', function() {
+            qualitySelect.style.display = this.value === 'mp4' ? 'block' : 'none';
+        });
+
+        // Soumission du formulaire
+        downloadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const url = document.getElementById('url').value.trim();
+            const format = document.getElementById('format').value;
+            const quality = document.getElementById('quality').value;
+            
+            if (!url) return;
+            
+            // Envoyer la demande de téléchargement
+            socket.emit('startDownload', { 
+                videoUrl: url, 
+                format, 
+                quality 
+            });
+            
+            // Réinitialiser le formulaire
+            document.getElementById('url').value = '';
+        });
+
+        // Effacer les téléchargements terminés
+        clearCompletedBtn.addEventListener('click', function() {
+            downloads.forEach((download, id) => {
+                if (download.status === 'completed' || download.status === 'error') {
+                    downloads.delete(id);
+                }
+            });
+            updateDownloadsList();
+        });
+
+        // Événements Socket.IO
+        socket.on('downloadQueued', function(data) {
+            const { id, position } = data;
+            const url = document.getElementById('url').value;
+            
+            downloads.set(id, {
+                id,
+                url,
+                status: 'queued',
+                progress: 0,
+                statusText: `En file d'attente (position ${position})`,
+                format: document.getElementById('format').value,
+                quality: document.getElementById('quality').value
+            });
+            
+            updateDownloadsList();
+        });
+
+        socket.on('downloadProgress', function(data) {
+            const { id, progress, status } = data;
+            
+            if (downloads.has(id)) {
+                const download = downloads.get(id);
+                download.status = 'downloading';
+                download.progress = progress;
+                download.statusText = status;
+                downloads.set(id, download);
+                updateDownloadsList();
+            }
+        });
+
+        socket.on('downloadComplete', function(data) {
+            const { id, filename } = data;
+            
+            if (downloads.has(id)) {
+                const download = downloads.get(id);
+                download.status = 'completed';
+                download.progress = 100;
+                download.statusText = 'Téléchargement terminé';
+                download.filename = filename;
+                downloads.set(id, download);
+                updateDownloadsList();
+            }
+        });
+
+        socket.on('downloadError', function(data) {
+            const { id, error } = data;
+            
+            if (downloads.has(id)) {
+                const download = downloads.get(id);
+                download.status = 'error';
+                download.statusText = error;
+                downloads.set(id, download);
+                updateDownloadsList();
+            }
+        });
+
+        // Fonction pour mettre à jour la liste des téléchargements
+        function updateDownloadsList() {
+            if (downloads.size === 0) {
+                downloadsList.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;">📭</div>
+                        <p>Aucun téléchargement en cours</p>
+                        <p style="font-size: 0.9em; margin-top: 5px; opacity: 0.7;">Ajoutez une URL YouTube pour commencer</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const downloadsArray = Array.from(downloads.values()).reverse();
+            
+            downloadsList.innerHTML = downloadsArray.map(download => {
+                const statusClass = `status-${download.status}`;
+                const itemClass = download.status === 'completed' ? 'completed' : 
+                                 download.status === 'error' ? 'error' : '';
+                
+                return `
+                    <div class="download-item ${itemClass}" data-id="${download.id}">
+                        <div class="download-header">
+                            <div class="download-info">
+                                <h3>${getVideoTitle(download.url)}</h3>
+                                <div class="download-meta">
+                                    ${download.format.toUpperCase()} • ${download.quality !== 'highest' ? download.quality : 'Meilleure qualité'}
+                                </div>
+                            </div>
+                            <div class="download-status">
+                                <span class="status-badge ${statusClass}">
+                                    ${getStatusText(download.status)}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        ${download.status === 'downloading' ? `
+                            <div class="progress-text">${download.statusText}</div>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${download.progress}%"></div>
+                            </div>
+                        ` : ''}
+                        
+                        ${download.status === 'error' ? `
+                            <div class="progress-text" style="color: #dc3545;">${download.statusText}</div>
+                        ` : ''}
+                        
+                        <div class="download-actions">
+                            ${download.status === 'completed' ? `
+                                <button class="action-btn download-file-btn" onclick="downloadFile('${download.filename}')">
+                                    📁 Télécharger le fichier
+                                </button>
+                            ` : ''}
+                            <button class="action-btn remove-btn" onclick="removeDownload('${download.id}')">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Fonctions utilitaires
+        function getVideoTitle(url) {
+            try {
+                const urlObj = new URL(url);
+                const videoId = urlObj.searchParams.get('v') || urlObj.pathname.split('/').pop();
+                return `Vidéo YouTube (${videoId})`;
+            } catch {
+                return 'Vidéo YouTube';
+            }
+        }
+
+        function getStatusText(status) {
+            const statusTexts = {
+                'queued': 'En attente',
+                'downloading': 'En cours',
+                'completed': 'Terminé',
+                'error': 'Erreur'
+            };
+            return statusTexts[status] || status;
+        }
+
+        function downloadFile(filename) {
+            const link = document.createElement('a');
+            link.href = `/download/${encodeURIComponent(filename)}`;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function removeDownload(id) {
+            downloads.delete(id);
+            updateDownloadsList();
+        }
+
+        // Initialisation
+        updateDownloadsList();
+    </script>
+</body>
+</html>
+
