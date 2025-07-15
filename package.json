@@ -1,16 +1,14 @@
 {
-  "name": "yt-downloader",
+  "name": "yt-downloader-vercel",
   "version": "1.0.0",
-  "main": "app.js",
+  "description": "YouTube Downloader adapted for Vercel Serverless Functions",
+  "main": "api/download.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "vercel dev"
   },
   "dependencies": {
-    "express": "^5.1.0",
-    "ffmpeg-static": "^5.2.0",
-    "fluent-ffmpeg": "^2.1.2",
     "ytdl-core": "npm:@distube/ytdl-core@^4.16.12",
-    "socket.io": "^4.7.5",
     "uuid": "^9.0.1"
   }
 }
+
